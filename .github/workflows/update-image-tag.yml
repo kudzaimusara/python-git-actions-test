@@ -19,7 +19,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: test
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get tag name
