@@ -1,0 +1,162 @@
+# Default values for card-eks-service-tcp-http.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+
+image:
+  repository: 122343534534.dkr.ecr.eu-west-1.amazonaws.com/cat-food-service
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "test"
+
+imagePullSecrets: []
+nameOverride: "cat-food-service"
+fullnameOverride: "cat-food-service"
+
+
+serviceDiscoveryName:
+  create: true
+  name: "cat-food-service"
+
+
+## NOTES on Args and Command:
+# Description	                            Docker field name	    Kubernetes field name
+# The command run by the container	      Entrypoint	          command
+# The arguments passed to the command	    Cmd	                  args
+
+## Extra Commands are only used if you need to override the Container entrypoint
+extraCommands: []
+  #- python
+  #- service.py
+
+## Extra Args are only used if you need to override the Container command after entrypoint
+extraArgs: []
+
+startupProbe:
+  httpGet:
+    path: "/meta/health"
+    port: "tcp"
+  initialDelaySeconds: 2
+  failureThreshold: 60
+  timeoutSeconds: 30
+  periodSeconds: 1
+
+livenessProbe:
+  httpGet:
+    path: "/meta/health"
+    port: "tcp"
+  failureThreshold: 3
+  timeoutSeconds: 30
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: "/meta/health"
+    port: "tcp"
+  failureThreshold: 3
+  timeoutSeconds: 30
+  periodSeconds: 30
+
+targetGroupBinding:
+  create: true
+  targetGroupArn: "k8s-tcp-http-cat-food-service"
+  #  If specified, none of the other fields (i.e. ipBlocks) can be set.
+  securityGroup: ""
+  # List of allowed source/destination IPBlocks used in networking rules.
+  ipBlocks:
+  - "10.149.80.0/21"
+  - "10.149.91.0/21"
+  annotations:
+    card.beta.kubernetes.io/elbv2-listener-protocol: "TCP"
+    card.beta.kubernetes.io/elbv2-arn: "arn:aws:elasticloadbalancing:eu-west-1:122343534534:loadbalancer/net/eks-prod-int-groceries/80bf3d4511327c46"
+
+statsd:
+  env: "test"
+  serviceName: "cat-food-service"
+
+## Add domain search to pods for dns queries
+dnsConfig:
+  searches:
+    - food-rssp.svc.cluster.local
+    - s4f-services.svc.cluster.local
+    - card.test
+
+serviceAccount:
+  create: true
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+
+# If using AWS ALB Ingress type: NodePort must be used.
+service:
+  type: NodePort
+  port: 8006
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "cat-food-service.cardfood.com"
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: alb
+    external-dns.alpha.kubernetes.io/hostname: "cat-food-service.cardfood.com"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/healthcheck-path: /meta/health
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
+    alb.ingress.kubernetes.io/group.name: api-prod
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:eu-west-1:122343534534:certificate/4616fcd2-2381-11f1-b057-7ef190ecfd1f"
+
+  labels: {}
+  path: /*
+  hosts:
+    - "cat-food-service.cardfood.com"
+
+  ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
+  extraPaths:
+    - path: /*
+      backend:
+        service:
+          name: ssl-redirect
+          port:
+            name: use-annotation
+      pathType: ImplementationSpecific
+  tls:
+  - hosts:
+      - "cat-food-service.cardfood.com"
+
+additionalEnv:
+  - name: ROLE
+    value: "test"
+
+resources:
+  limits:
+    memory: "4096Mi"
+  requests:
+    cpu: "512m"
+    memory: "512Mi"
+
+autoscaling:
+  enabled: false
+
+kedaScaling:
+  enabled: true
+  cpuUtilization: 75 # CPU Utilization in percentage.
+  minReplicas: 3
+  maxReplicas: 9
+  cooldownPeriod: 300
+  pollingInterval: 30
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
