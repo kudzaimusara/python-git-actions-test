@@ -1,9 +1,6 @@
 name: Update Image Tag
 
 on:
-  push:
-    tags:
-      - "**"
   pull_request:
     branches:
       - main
