@@ -16,12 +16,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: test
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get tag name
+      - name: Get latest git tag
         id: get_tag
-        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+        run: |
+          git fetch --tags
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$TAG" ]; then
+            echo "No tags found in this branch — skipping update"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Update image tag in image.yaml
         run: |
@@ -32,5 +40,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add image.yaml
-          git commit -m "chore: update image tag to ${{ steps.get_tag.outputs.tag }}"
-          git push origin test
+          git diff --staged --quiet || git commit -m "chore: update image tag to ${{ steps.get_tag.outputs.tag }}"
+          git push origin ${{ github.head_ref }}
