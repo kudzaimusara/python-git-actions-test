@@ -1,3 +1,9 @@
+## 1.2.1 (2026-03-19)
+
+### Fix
+
+- **.github/workflows/update-image-tag.yml**: removed trigger for workflow upon tags being created
+
 ## 1.2.0 (2026-03-19)
 
 ### Feat
