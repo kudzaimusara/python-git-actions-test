@@ -25,7 +25,7 @@ jobs:
 
       - name: Update image tag in image.yaml
         run: |
-          sed -i 's/^\(  tag: \).*/\1"${{ steps.get_tag.outputs.tag }}"/' image.yaml
+          sed -i 's|^\(  tag: \).*|\1"${{ steps.get_tag.outputs.tag }}"|' image.yaml
 
       - name: Commit and push updated image.yaml
         run: |
