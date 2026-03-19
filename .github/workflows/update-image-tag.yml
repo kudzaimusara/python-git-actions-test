@@ -33,4 +33,4 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add image.yaml
           git commit -m "chore: update image tag to ${{ steps.get_tag.outputs.tag }}"
-          git push origin main
+          git push origin test
